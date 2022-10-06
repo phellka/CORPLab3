@@ -11,6 +11,9 @@ using MadyshevVisualComponents.models;
 using StoreProductsDatabaseImplement.Models;
 using MadyshevUnvisualComponents;
 using MadyshevUnvisualComponents.Models;
+using LipatovNonVisualComponents.HelperModels;
+using LipatovNonVisualComponents;
+using IlbekovNonVisualComponents;
 
 namespace CORPLab3.PlaginMain
 {
@@ -18,6 +21,7 @@ namespace CORPLab3.PlaginMain
     {
         private MadyshevDataGridView dataGridView = new MadyshevDataGridView();
         private ProductLogic productLogic = new ProductLogic();
+        private UnitMeasurementLogic unitMeasurementLogic = new UnitMeasurementLogic();
         public MainPluginConvention()
         {
             dataGridView.AddColumns(new List<TableData>() {
@@ -86,10 +90,6 @@ namespace CORPLab3.PlaginMain
             }
             return formProduct;
         }
-        public bool CreateChartDocument(PluginsConventionSaveDocument saveDocument)
-        {
-            throw new NotImplementedException();
-        }
         public bool CreateSimpleDocument(PluginsConventionSaveDocument saveDocument)
         {
             try
@@ -108,16 +108,130 @@ namespace CORPLab3.PlaginMain
                 }
                 tablesComponent.CreateDoc(saveDocument.FileName, "Поставщики", new List<string[,]>() { strings });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
                 return false;
             }
             return true;
         }
+
         public bool CreateTableDocument(PluginsConventionSaveDocument saveDocument)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var list = productLogic.Read(null);
+                LipatovTablePdf lipatovTablePdf = new LipatovTablePdf();
+                List<TableCell> firstColumn = new List<TableCell> {
+                    new TableCell() {
+                        Name = "Id",
+                        RowHeight = "1cm",
+                        PropertyName = "Id"
+                    },
+                    new TableCell() {
+                        Name = "Название",
+                        RowHeight = "1cm",
+                        PropertyName = "Name"
+                    },
+                    new TableCell() {
+                        Name = "Информация",
+                        RowHeight = "3cm",
+                        CountCells = 2
+                    },
+                    new TableCell() {
+                        Name = "Поставщики",
+                        RowHeight = "4cm",
+                        CountCells = 3
+                    },
+                };
+                List<TableCell> SecondColumn = new List<TableCell> {
+                    new TableCell() {
+                        Name = "Единицы измерения",
+                        PropertyName = "UnitMeasurement"
+                    },
+                    new TableCell() {
+                        Name = "Страна",
+                        PropertyName = "Country"
+                    },
+                    new TableCell() {
+                        Name = "Поставщик 1",
+                        PropertyName = "ProviderOne"
+                    },
+                    new TableCell() {
+                        Name = "Поставщик 2",
+                        PropertyName = "ProviderTwo"
+                    },
+                    new TableCell() {
+                        Name = "Поставщик 3",
+                        PropertyName = "ProviderThree"
+                    }
+                };
+
+                lipatovTablePdf.CreateDocument(new TableParameters<ProductViewModel>()
+                {
+                    Path = saveDocument.FileName,
+                    Title = "Продукты",
+                    CellsFirstColumn = firstColumn,
+                    CellsSecondColumn = SecondColumn,
+                    DataList = list
+                });
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return false;
+            }
+        }
+        public bool CreateChartDocument(PluginsConventionSaveDocument saveDocument)
+        {
+            var products = productLogic.Read(null);
+            var units = unitMeasurementLogic.Read(null);
+            List<IlbekovLineChartExcel.ChartSeries> chartSeriesList = new List<IlbekovLineChartExcel.ChartSeries>();
+            string[] xSeries = new string[units.Count()];
+            for(int i = 0; i < units.Count; ++i)
+            {
+                xSeries[i] = units[i].Name;
+            }
+            List<string> countries = new List<string>();
+            for (int i = 0; i < products.Count; ++i)
+            {
+                if (!countries.Contains(products[i].Country))
+                {
+                    countries.Add(products[i].Country);
+                }
+            }
+            for (int i = 0; i < countries.Count; ++i)
+            {
+                string name = countries[i];
+                double[] values = new double[xSeries.Length];
+                for (int u = 0; u < xSeries.Length; ++u)
+                {
+                    double value = 0;
+                    for (int j = 0; j < products.Count; ++j)
+                    {
+                        if (products[j].Country == name && products[j].UnitMeasurement == xSeries[u])
+                        {
+                            value += 1;
+                        }
+                    }
+                    values[u] = value;
+                }
+                chartSeriesList.Add(new IlbekovLineChartExcel.ChartSeries
+                {
+                    Name = name,
+                    Values = values
+                });
+            }
+            var doc = new IlbekovLineChartExcel();
+            doc.CreateFile(
+                saveDocument.FileName,
+                "Продукты по единицам измерений", "Продукты по странам",
+                chartSeriesList,
+                IlbekovLineChartExcel.LegendPosition.Bottom,
+                _xSeries: xSeries
+            );
+            return true;
         }
     }
 }

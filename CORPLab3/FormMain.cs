@@ -35,14 +35,25 @@ namespace CORPLab3
             var mainPlugin = new MainPluginConvention();
             dic.Add(mainPlugin.PluginName, mainPlugin);
 
-            System.Windows.Forms.ToolStripItem[] toolStripItems = new System.Windows.Forms.ToolStripItem[dic.Count()];
+            System.Windows.Forms.ToolStripItem[] toolStripItems = new System.Windows.Forms.ToolStripItem[2];
             ToolStripMenuItem menuItemProducts = new ToolStripMenuItem();
             menuItemProducts.Text = mainPlugin.PluginName;
             menuItemProducts.Click += MenuItemProducts_Click;
             toolStripItems[0] = menuItemProducts;
 
+            ToolStripMenuItem menuItemUnits = new ToolStripMenuItem();
+            menuItemUnits.Text = "Единицы измерения";
+            menuItemUnits.Click += MenuItemUnits_Click;
+            toolStripItems[1] = menuItemUnits;
+
             ControlsStripMenuItem.DropDownItems.AddRange(toolStripItems);
             return dic;
+        }
+
+        private void MenuItemUnits_Click(object sender, EventArgs e)
+        {
+            FormUnits formUnits = new FormUnits();
+            formUnits.ShowDialog();
         }
 
         private void MenuItemProducts_Click(object sender, EventArgs e)
@@ -150,32 +161,42 @@ namespace CORPLab3
         }
         private void CreateTableDoc()
         {
-            // TODO узнать где сохранять
-            if (_plugins[_selectedPlugin].CreateTableDocument(new
-           PluginsConventionSaveDocument()))
+            using (var dialog = new SaveFileDialog { Filter = "pdf|*.pdf" })
             {
-                MessageBox.Show("Документ сохранен", "Создание документа",
-    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                MessageBox.Show("Ошибка при создании документа", "Ошибка",
-               MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (dialog.ShowDialog() == DialogResult.OK && _plugins[_selectedPlugin].CreateTableDocument(new
+                    PluginsConventionSaveDocument()
+                    {
+                        FileName = dialog.FileName
+                    }))
+                {
+                    MessageBox.Show("Документ сохранен", "Создание документа",
+        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Ошибка при создании документа", "Ошибка",
+                   MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
         private void CreateChartDoc()
         {
-            // TODO узнать где сохранять
-            if (_plugins[_selectedPlugin].CreateChartDocument(new
-           PluginsConventionSaveDocument()))
+            using (var dialog = new SaveFileDialog { Filter = "xlsx|*.xls" })
             {
-                MessageBox.Show("Документ сохранен", "Создание документа",
-               MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                MessageBox.Show("Ошибка при создании документа", "Ошибка",
-               MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (dialog.ShowDialog() == DialogResult.OK && _plugins[_selectedPlugin].CreateChartDocument(new
+                    PluginsConventionSaveDocument()
+                {
+                    FileName = dialog.FileName
+                }))
+                {
+                    MessageBox.Show("Документ сохранен", "Создание документа",
+        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Ошибка при создании документа", "Ошибка",
+                   MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
         private void AddElementToolStripMenuItem_Click(object sender, EventArgs e) =>
